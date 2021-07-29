@@ -4,7 +4,8 @@
 The script automatically downloads and installs the programs on your system and
 it also installs any prerequisites first, so you don't have to worry about
 them.
-A to check which programs are available for install, check  the
+
+To check which programs are available for install, check  the
 [packages](packages/) directory in this repository.
 
 ## Requirements
