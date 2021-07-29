@@ -67,5 +67,5 @@ install_packages() {
   fi
 
   # Post install stuff (add other files to uninstall data)
-  printf "Autodesk Fusion 360.desktop\nFusion360_d3d11.log\nFusion360_d3d9.log\nFusion360_dxgi.log\n" >> $INSTALLDIR/$PACKAGE_NAME-wiener-uninstall.data
+  printf "$HOME/.local/share/applications/wine/Programs/Autodesk\n" >> $INSTALLDIR/$PACKAGE_NAME-wiener-uninstall.data
 }

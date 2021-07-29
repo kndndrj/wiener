@@ -56,6 +56,26 @@ install_prerequisites() {
   fi
 }
 
+retrieve_install_script() {
+  # Install basic packages
+  install_prerequisites wine wine-gecko wine-mono curl p7zip wget
+
+  # Download package install
+  printf "Retrieving package install script\n"
+  mkdir -p /tmp/wiener
+  wget --show-progress -q -P /tmp/wiener/ "$PACKAGE_URL/$PACKAGE_NAME"
+  if [ $? -ne 0 ]; then
+    printf "Package does not exist: $PACKAGE_NAME\n"
+    exit 1
+  fi
+  printf "\n"
+
+  # Source the package install and delete the file afterward
+  . /tmp/wiener/$PACKAGE_NAME
+  rm -rf /tmp/wiener
+}
+
+
 ###########################################################
 ## Parse arguments                                       ##
 ###########################################################
@@ -94,6 +114,8 @@ parse_arguments() {
 ## Procedures                                            ##
 ###########################################################
 install() {
+  retrieve_install_script
+
   parse_arguments "$@"
 
   printf "${BROWN}Start of installation${NC}\n"
@@ -215,20 +237,6 @@ PACKAGE_NAME="$1"
 [ "$PACKAGE_NAME" = "-h" ] && printf "${USAGE}\n" && exit
 
 shift
-
-# Install basic packages
-install_prerequisites wine wine-gecko wine-mono curl p7zip wget
-
-# Download package install
-mkdir -p /tmp/wiener
-wget -q -P /tmp/wiener/ "$PACKAGE_URL/$PACKAGE_NAME"
-if [ $? -ne 0 ]; then
-  printf "Package does not exist: $PACKAGE_NAME\n"
-  exit 1
-fi
-
-# Source the package install
-. /tmp/wiener/$PACKAGE_NAME
 
 # Get procedure
 case "$1" in

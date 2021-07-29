@@ -1,0 +1,49 @@
+#!/bin/sh
+
+PACKAGE_PREREQUISITES=""
+
+download_packages() {
+  # Download winetricks if it isn't in the temporary directory already
+  if [ ! -x "$TEMPDIR/winetricks" ]; then
+    printf "\n${BLUE}Downloading Winetricks!${NC}\n\n"
+    # Download
+    wget --show-progress -q -P "$TEMPDIR" "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
+    chmod +x $TEMPDIR/winetricks
+  fi
+
+
+  # Download mspaint.zip and the icon if it isn't in the temporary directory already
+  if [ ! -e "$TEMPDIR/mspaint.zip" ]; then
+    printf "\n${BLUE}Downloading MS Paint!${NC}\n\n"
+    wget --show-progress -q -O $TEMPDIR/mspaint.zip "https://filehippo.com/launch_download/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb3dubG9hZFR5cGUiOiJpbnRlcm5hbERvd25sb2FkIiwiZG93bmxvYWRVcmwiOiJodHRwczovL2RsNS5maWxlaGlwcG8uY29tLzc2Yi9mMTYvZDU1YzY1MTUwMTM4ZjA0N2IyMjc0NzVmMDkyNTgxYTc0NS9tc3BhaW50LnppcD9FeHBpcmVzPTE2Mjc1ODkzMDcmU2lnbmF0dXJlPTUxZjU4MDMwYWY4YjE4N2IzMjZmM2U3ZjFjMzQ4MTlmNzA0YmY1ODcmdXJsPWh0dHBzOi8vZmlsZWhpcHBvLmNvbS9kb3dubG9hZF9tcy1wYWludC8mRmlsZW5hbWU9bXNwYWludC56aXAiLCJwcm9ncmFtSWQiOiJhZDFkZThjMS1hMjNkLTRlOTYtOWIyMS0wY2U1YWVjNzhiMmQiLCJpYXQiOjE2Mjc1NDYxMTAsImV4cCI6MTYyNzU0OTcxMH0.NYqEYBsaHWc-Yj19KFz7iKwXjtd1gZALy_Z1ERD_c44"
+    wget -q -O $INSTALLDIR/icon.png "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/40d29641-ff13-4ea7-9dae-dffbabf6f29e/d7emkzf-304b18aa-9da5-42f7-8245-b3e0da089ae4.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwic3ViIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sIm9iaiI6W1t7InBhdGgiOiIvZi80MGQyOTY0MS1mZjEzLTRlYTctOWRhZS1kZmZiYWJmNmYyOWUvZDdlbWt6Zi0zMDRiMThhYS05ZGE1LTQyZjctODI0NS1iM2UwZGEwODlhZTQucG5nIn1dXX0._TwmSOhsCGD3zGAcQuyptKx5VLsHDH0yGAPwws7t7No"
+  fi
+
+}
+
+install_packages() {
+  # Run winetricks (automatically makes a prefix in $INSTALLDIR)
+  printf "\n${GREEN}Running Winetricks!${NC}\n\n"
+  WINEPREFIX=$INSTALLDIR $TEMPDIR/winetricks mfc42 | tee $LOGDIR/winetricks_setup.log
+  if [ $? -ne 0 ]; then
+    printf "$FAIL_MESSAGE"
+    exit 1
+  fi
+
+  printf "\n${GREEN}Installing MS Paint!${NC}\n\n"
+  # Extract .exe to prefix
+  7z x -o$INSTALLDIR/ $TEMPDIR/mspaint.zip 
+
+  # Create a desktop file
+  mkdir -p $HOME/.local/share/applications
+  printf "[Desktop Entry]
+  Name=MS Paint
+  Exec=env WINEPREFIX=\"$INSTALLDIR\" wine $INSTALLDIR/mspaint.exe
+  Type=Application
+  Terminal=false
+  Icon=$INSTALLDIR/icon.png\n" > "$HOME/.local/share/applications/MS_Paint.desktop"
+
+  # Post install stuff (add other files to uninstall data)
+  printf "$HOME/.local/share/applications/MS_Paint.desktop\n" >> $INSTALLDIR/$PACKAGE_NAME-wiener-uninstall.data
+}
+
