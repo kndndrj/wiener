@@ -63,6 +63,17 @@ If you have any other needs, read `help`. You find it by running:
 First check in ~/.local/share/applications. Desktop files should be somewhere
 close.
 
+## Contributing
+If you happen to have a script for your wine application, it shouldn't be too
+hard to adapt it for wiener. put the script with the name of the program into
+`packages` directory and implement two functions. The first one is
+`download_packages()`, in it you download any packages to the `$TEMPDIR`
+directory. The second function is `install_packages()`, use it to make a prefix
+in the `$INSTALLDIR` directory, install the program itself and if needed,
+create a `.destop` file.
+
+I'll be happy to see your pull request!
+
 ## Other
 If you have any other questions or comments, feel free to post them into the
 [Issues](https://github.com/Kndndrj/wiener/issues) section.

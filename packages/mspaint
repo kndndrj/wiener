@@ -11,11 +11,13 @@ download_packages() {
     chmod +x $TEMPDIR/winetricks
   fi
 
+  # if download fails again:
+  # mspaint_dl_link=$(curl --silent https://www.filehorse.com/download-ms-paint/download/ | grep -oE "https://www\.filehorse\.com/download/file/[^\"]*")
 
   # Download mspaint.zip and the icon if it isn't in the temporary directory already
   if [ ! -e "$TEMPDIR/mspaint.zip" ]; then
     printf "\n${BLUE}Downloading MS Paint!${NC}\n\n"
-    wget --show-progress -q -O $TEMPDIR/mspaint.zip "https://filehippo.com/launch_download/?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb3dubG9hZFR5cGUiOiJpbnRlcm5hbERvd25sb2FkIiwiZG93bmxvYWRVcmwiOiJodHRwczovL2RsNS5maWxlaGlwcG8uY29tLzc2Yi9mMTYvZDU1YzY1MTUwMTM4ZjA0N2IyMjc0NzVmMDkyNTgxYTc0NS9tc3BhaW50LnppcD9FeHBpcmVzPTE2Mjc1ODkzMDcmU2lnbmF0dXJlPTUxZjU4MDMwYWY4YjE4N2IzMjZmM2U3ZjFjMzQ4MTlmNzA0YmY1ODcmdXJsPWh0dHBzOi8vZmlsZWhpcHBvLmNvbS9kb3dubG9hZF9tcy1wYWludC8mRmlsZW5hbWU9bXNwYWludC56aXAiLCJwcm9ncmFtSWQiOiJhZDFkZThjMS1hMjNkLTRlOTYtOWIyMS0wY2U1YWVjNzhiMmQiLCJpYXQiOjE2Mjc1NDYxMTAsImV4cCI6MTYyNzU0OTcxMH0.NYqEYBsaHWc-Yj19KFz7iKwXjtd1gZALy_Z1ERD_c44"
+    wget --show-progress --no-check-certificate -q -O $TEMPDIR/mspaint.zip "https://www.filehorse.com/download/file/eDLdXi4tFQfLlsuM43-X1lIbqspVEbbaO5wkbcY3SUCUPJEce5BTxR5Zt9q--88Dl8TCWk-C-2pjri5kTah4fp9h1teoPWp7AIQcwJ3EGaQ/"
     wget -q -O $INSTALLDIR/icon.png "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/40d29641-ff13-4ea7-9dae-dffbabf6f29e/d7emkzf-304b18aa-9da5-42f7-8245-b3e0da089ae4.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwic3ViIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sIm9iaiI6W1t7InBhdGgiOiIvZi80MGQyOTY0MS1mZjEzLTRlYTctOWRhZS1kZmZiYWJmNmYyOWUvZDdlbWt6Zi0zMDRiMThhYS05ZGE1LTQyZjctODI0NS1iM2UwZGEwODlhZTQucG5nIn1dXX0._TwmSOhsCGD3zGAcQuyptKx5VLsHDH0yGAPwws7t7No"
   fi
 
