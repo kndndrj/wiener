@@ -1,9 +1,11 @@
-# Install Arch Linux Programs Through WINE
+# Wiener
 [![Wine - 6.13-1](https://img.shields.io/badge/Wine-6.13--1-red?style=for-the-badge)](https://www.winehq.org/) [![DXVK - v1.9](https://img.shields.io/badge/DXVK-v1.9-2ea44f?style=for-the-badge)](https://github.com/doitsujin/dxvk) [![winetricks - 20210206-next](https://img.shields.io/badge/winetricks-20210206--next-2ea44f?style=for-the-badge)](https://github.com/Winetricks/winetricks)
 
 The script automatically downloads and installs the programs on your system and
 it also installs any prerequisites first, so you don't have to worry about
 them.
+A to check which programs are available for install, check  the
+[packages](packages/) directory in this repository.
 
 ## Requirements
 Before installing, please make sure to have the appropriate graphics drivers
@@ -47,7 +49,7 @@ To uninstall, simply run:
 ./wiener.sh <package_name> uninstall
 ```
 And follow the on-screen instructions.
-#### List Availible Packages
+#### List Available Packages
 To list all packages that can be installed, run:
 ```sh
 ./wiener.sh list-packages
