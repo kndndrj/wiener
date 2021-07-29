@@ -14,25 +14,27 @@ GREEN="\033[1;32m"
 BROWN="\033[1;33m"
 BLUE="\033[1;34m"
 NC="\033[0m"
-USAGE="$0 [command] [options]\n\
+USAGE="$0 <package> [command] [options]\n\
   Commands:\n\
     install [-p, -t, -l]:\n\
-      Downloads and installs Fusion 360 on your system.\n\
+      Downloads and installs specified package on your system.\n\
       Uses wineprefix for installation, temporary directory for storing downloads\n\
       and log directory for storing log files.\n\
     install-clean [-p, -t, -l]:\n\
-      Uninstalls any found instances of Fusion 360 before downloading and installing.\n\
+      Uninstalls any found instances of the specified package before downloading and installing.\n\
       Uses wineprefix for installation, temporary directory for storing downloads\n\
       and log directory for storing log files.\n\
     uninstall:\n\
-      Uninstalls any found instances of Fusion 360 from the system.\n\n\
+      Uninstalls any found instances of the specified package from the system.\n\n\
   Options:\n\
     -p <wine_prefix>  -- Path to directory to put a wineprefix in (basically an install directory),\n\
                          must be an absolute path!\n\
     -t <temp_dir>     -- Path to temporary directory (where to store downloads).\n\
     -l <log_dir>      -- Specify your own log file.\n\
     -h                -- Print this message and exit\n\n\
-    For more information, check README.md at \"https://github.com/Kndndrj/Fusion-360-Arch-Linux-Script\""
+  To find availible packages, try runnig: \"$0 list-packages\"\n\n\
+  For more information, check README.md at \"https://github.com/Kndndrj/wiener\""
+  
 FAIL_MESSAGE="${RED}Installation failed!${NC}\n\
   The file may be corrupt!\n\
   Please consider doing a clean install.\n\
@@ -228,6 +230,11 @@ uninstall() {
   printf "\n\n${GREEN}$PACKAGE_NAME is now uninstalled!${NC}\n"
 }
 
+list_packages() {
+  PACKAGE_LIST=$(curl --silent "https://api.github.com/repos/kndndrj/wiener/contents/packages")
+  printf "$PACKAGE_LIST\n" | grep -E "\bname\b\":" | sed -E "s/.*\"([^\"]+)\".*/\1/"
+}
+
 ###########################################################
 ## Entry point                                           ##
 ###########################################################
@@ -235,6 +242,7 @@ uninstall() {
 PACKAGE_NAME="$1"
 [ -z "$PACKAGE_NAME" ] && exit 1
 [ "$PACKAGE_NAME" = "-h" ] && printf "${USAGE}\n" && exit
+[ "$PACKAGE_NAME" = "list-packages" ] && list_packages && exit
 
 shift
 
