@@ -37,6 +37,7 @@ FAIL_MESSAGE="${RED}Installation failed!${NC}\n\
   The file may be corrupt!\n\
   Please consider doing a clean install.\n\
   If you already tried that, check that you have the appropriate drivers installed.\n"
+PACKAGE_URL="https://raw.githubusercontent.com/Kndndrj/wiener/master/packages"
 
 ###########################################################
 ## Helper functions                                      ##
@@ -55,84 +56,12 @@ install_prerequisites() {
   fi
 }
 
-download_packages() {
-  # Download winetricks if it isn't in the temporary directory already
-  if [ ! -x "$TEMPDIR/winetricks" ]; then
-    printf "\n${BLUE}Downloading Winetricks!${NC}\n\n"
-    # Download
-    wget -P "$TEMPDIR" "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
-    chmod +x $TEMPDIR/winetricks
-  fi
-
-  # Download DXVK if it isn't in the temporary directory already
-  if [ ! -x "$TEMPDIR/dxvk_extracted/setup_dxvk.sh" ]; then
-    printf "\n${BLUE}Downloading DXVK!${NC}\n\n"
-    # If this file is already downloaded, delete it (might be corrupt)
-    rm -rf "$TEMPDIR/DXVK.tar.gz"
-    # Get the latest release of "DXVK"
-    DXVK_INFO=$(curl --silent "https://api.github.com/repos/doitsujin/dxvk/releases/latest")
-    DXVK_TAG=$(printf "${DXVK_INFO}\n" | grep -E "\"tag_name\":" | sed -E "s/.*\"([^\"]+)\".*/\1/")
-    DXVK_DLNAME=$(printf "${DXVK_INFO}\n" | grep -E "\"name\":.*\.tar\.gz" | sed -E "s/.*\"([^\"]+)\".*/\1/")
-    DXVK_LINK="https://github.com/doitsujin/dxvk/releases/download/${DXVK_TAG}/${DXVK_DLNAME}"
-    # Download and extract to $TEMPDIR
-    wget -O "$TEMPDIR/DXVK.tar.gz" "$DXVK_LINK"
-    tar xvzf "$TEMPDIR/DXVK.tar.gz" -C "$TEMPDIR"
-    mv $TEMPDIR/dxvk-* $TEMPDIR/dxvk_extracted
-    chmod +x $TEMPDIR/dxvk_extracted/setup_dxvk.sh
-  fi
-
-  # Download Fusion 360 if it isn't in the temporary directory already
-  if [ ! -e "$TEMPDIR/setup/streamer.exe" ]; then
-    printf "\n${BLUE}Downloading Fusion 360!${NC}\n\n"
-    # If this file is already downloaded, delete it (might be corrupt)
-    rm -rf "$TEMPDIR/Fusion 360 Admin Install.exe"
-    # Download the installer and unzip to setup directory
-    wget -P $TEMPDIR https://dl.appstreaming.autodesk.com/production/installers/Fusion%20360%20Admin%20Install.exe
-    7z x -o$TEMPDIR/setup/ "$TEMPDIR/Fusion 360 Admin Install.exe"
-  fi
-
-}
-
-install_packages() {
-  # Run winetricks (automatically makes a prefix in $INSTALLDIR)
-  printf "\n${GREEN}Running Winetricks!${NC}\n\n"
-  WINEPREFIX=$INSTALLDIR $TEMPDIR/winetricks atmlib gdiplus msxml3 msxml6 vcrun2017 corefonts \
-                                             fontsmooth=rgb winhttp win10 | tee $LOGDIR/winetricks_setup.log
-  if [ $? -ne 0 ]; then
-    printf "$FAIL_MESSAGE"
-    exit 1
-  fi
-
-  # Install "DXVK" in the wineprefix
-  printf "\n${GREEN}Installing DXVK!${NC}\n\n"
-  WINEPREFIX=$INSTALLDIR $TEMPDIR/dxvk_extracted/setup_dxvk.sh install | tee $LOGDIR/dxvk_setup.log
-  if [ $? -ne 0 ]; then
-    printf "$FAIL_MESSAGE"
-    exit 1
-  fi
-
-  # Install Fusion 360
-  printf "\n${GREEN}Installing Fusion 360!${NC}\n\n"
-  WINEPREFIX=$INSTALLDIR wine $TEMPDIR/setup/streamer.exe -p deploy -g -f $LOGDIR/fusion360_setup.log --quiet
-  if [ $? -ne 0 ]; then
-    printf "$FAIL_MESSAGE"
-    exit 1
-  fi
-}
-
-create_launch_script() {
-  printf "env WINEPREFIX='$INSTALLDIR' wine '$INSTALLDIR/drive_c/Program Files/Autodesk/webdeploy/production/6a0c9611291d45bb9226980209917c3d/FusionLauncher.exe'\n" >> $INSTALLDIR/fusion360
-  printf "#Sometimes the first command doesn't work and you need to launch it with this one:\n" >> $INSTALLDIR/fusion360
-  printf "#env WINEPREFIX='$INSTALLDIR' wine C:\\windows\\command\\start.exe /Unix /$HOME/.fusion360/dosdevices/c:/ProgramData/Microsoft/Windows/Start\ Menu/Programs/Autodesk/Autodesk\ Fusion\ 360.lnk\n" > $INSTALLDIR/fusion360
-  chmod +x $INSTALLDIR/fusion360
-}
-
 ###########################################################
 ## Parse arguments                                       ##
 ###########################################################
 parse_arguments() {
   # Parse additional arguments
-  while getopts ":p:t:l:h" option; do
+  while getopts ":p:t:l:" option; do
     case "${option}" in
       p) 
         INSTALLDIR=${OPTARG};;
@@ -140,9 +69,6 @@ parse_arguments() {
         TEMPDIR=${OPTARG};;
       l)
         LOGDIR=${OPTARG};;
-      h)
-        printf "${USAGE}\n"
-        exit;;
       :)
         printf "${RED}Error${NC}: Option \"-${OPTARG}\" requires an argument.\nUsage:\n${USAGE}\n"
         exit 1;;
@@ -154,10 +80,10 @@ parse_arguments() {
 
   # Check for $INSTALLDIR and $TEMPDIR, use defaults if not specified
   if [ -z "$INSTALLDIR" ]; then
-    INSTALLDIR="$HOME/.local/share/fusion360"
+    INSTALLDIR="$HOME/.local/share/wiener/$PACKAGE_NAME"
   fi
   if [ -z "$TEMPDIR" ]; then
-    TEMPDIR="$HOME/.local/share/fusion360_temp/"
+    TEMPDIR="$HOME/.local/share/wiener/$PACKAGE_NAME-temp/"
   fi
   if [ -z "$LOGDIR" ]; then
     LOGDIR="$TEMPDIR/logs"
@@ -183,10 +109,10 @@ install() {
     else
       # Delete install directory, but preserve the previous uninstall data
       printf "         Moving on with the install!\n"
-      mv $INSTALLDIR/fusion360_uninstall_data.txt /tmp/ 2>/dev/null
+      mv "$INSTALLDIR/$PACKAGE_NAME-wiener-uninstall.data" "/tmp/" 2>/dev/null
       rm -rf $INSTALLDIR
       mkdir -p $INSTALLDIR
-      mv /tmp/fusion360_uninstall_data.txt $INSTALLDIR/ 2>/dev/null
+      mv "/tmp/$PACKAGE_NAME-wiener-uninstall.data" "$INSTALLDIR/" 2>/dev/null
     fi
   fi
 
@@ -202,26 +128,22 @@ install() {
     exit 1
   fi
 
-  install_prerequisites wine wine-gecko wine-mono lib32-gnutls gnutls cabextract p7zip curl wget
+  install_prerequisites $PACKAGE_PREREQUISITES
 
-  # Make the download directory
-  mkdir -p $TEMPDIR
-
-  download_packages
-
-  # Make the other directories
+  # Make the required directories
   mkdir -p $INSTALLDIR
+  mkdir -p $TEMPDIR
   mkdir -p $LOGDIR
 
   # Store directories in a file for uninstall
-  printf "$INSTALLDIR\n$TEMPDIR\n$LOGDIR\n" >> $INSTALLDIR/fusion360_uninstall_data.txt
+  printf "$INSTALLDIR\n$TEMPDIR\n$LOGDIR\n" >> $INSTALLDIR/$PACKAGE_NAME-wiener-uninstall.data
 
+  download_packages
   install_packages
-  create_launch_script
 
   # Exit message
-  printf "\n\n\n${GREEN}Fusion 360 has been installed!${NC}\n"
-  printf "\n\nWine should have automatically created a \".desktop\" file in ~/.local/share/applications/wine/Programs/Autodesk/\n"
+  printf "\n\n\n${GREEN}$PACKAGE_NAME has been installed!${NC}\n"
+  printf "\n\nWine should have automatically created a \".desktop\" file in ~/.local/share/applications/wine/Programs/\n"
   printf "If that's not the case, check \"help\" (-h flag).\n\n"
 
   # Removing the temporary directory
@@ -238,20 +160,20 @@ install() {
 }
 
 uninstall() {
-  printf "${BROWN}Uninstalling packages${NC}\n"
+  printf "${BROWN}Uninstalling $PACKAGE_NAME${NC}\n"
 
   # Find the uninstall file
-  uninstall_file="$(find $HOME/ -name "fusion360_uninstall_data.txt" -type f 2>/dev/null)"
+  uninstall_file="$(find $HOME/ -name "$PACKAGE_NAME-wiener-uninstall.data" -type f 2>/dev/null)"
   num_of_uninstalls=$(printf "$uninstall_file\n" | wc -l)
 
   if [ -z "$uninstall_file" ]; then
-    printf "It seems that you don't have Fusion 360 installed on your system!\n"
+    printf "It seems that you don't have $PACKAGE_NAME installed on your system!\n"
     return
   fi
 
-  # If there are more than one "fusion360_uninstall_data.txt" found, let the user choose.
+  # If there are more than one "...uninstall.data" found, let the user choose.
   if [ $num_of_uninstalls -gt 1 ]; then
-    printf "More than one instance of fusion360 found.\n"
+    printf "More than one instance of $PACKAGE_NAME found.\n"
     printf "$(dirname $uninstall_file)\n" | nl
     printf "Which one do you want to remove? [1-$num_of_uninstalls] [0 - remove all] "
     read answer
@@ -281,12 +203,34 @@ uninstall() {
     printf "Removed file: $file\n"
     rm -rf "$file"
   done
-  printf "\n\n${GREEN}Fusion 360 is now uninstalled!${NC}\n"
+  printf "\n\n${GREEN}$PACKAGE_NAME is now uninstalled!${NC}\n"
 }
 
 ###########################################################
 ## Entry point                                           ##
 ###########################################################
+# Get package name
+PACKAGE_NAME="$1"
+[ -z "$PACKAGE_NAME" ] && exit 1
+[ "$PACKAGE_NAME" = "-h" ] && printf "${USAGE}\n" && exit
+
+shift
+
+# Install basic packages
+install_prerequisites wine wine-gecko wine-mono curl p7zip wget
+
+# Download package install
+mkdir -p /tmp/wiener
+wget -q -P /tmp/wiener/ "$PACKAGE_URL/$PACKAGE_NAME"
+if [ $? -ne 0 ]; then
+  printf "Package does not exist: $PACKAGE_NAME\n"
+  exit 1
+fi
+
+# Source the package install
+. /tmp/wiener/$PACKAGE_NAME
+
+# Get procedure
 case "$1" in
   install)
     shift
@@ -300,12 +244,10 @@ case "$1" in
   uninstall)
     uninstall
     exit;;
-  -h)
-    printf "${USAGE}\n"
-    exit;;
   *)
-    printf "Invalid usage: $0 $1\n"
-    printf "Only use one of theese:\n"
-    printf "\"$0 install\"\n\"$0 install-clean\"\n\"$0 uninstall\"\n"
+    printf "Invalid usage\n"
+    printf "Only use one of these:\n"
+    printf "\"$0 <pkg> install\"\n\"$0 <pkg> install-clean\"\n\"$0 <pkg> uninstall\"\n"
+    printf "For help, run: \"$0 -h\"\n"
     exit 1
 esac

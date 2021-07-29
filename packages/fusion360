@@ -1,0 +1,71 @@
+#!/bin/sh
+
+PACKAGE_PREREQUISITES="lib32-gnutls gnutls cabextract"
+
+download_packages() {
+  # Download winetricks if it isn't in the temporary directory already
+  if [ ! -x "$TEMPDIR/winetricks" ]; then
+    printf "\n${BLUE}Downloading Winetricks!${NC}\n\n"
+    # Download
+    wget --show-progress -q -P "$TEMPDIR" "https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
+    chmod +x $TEMPDIR/winetricks
+  fi
+
+  # Download DXVK if it isn't in the temporary directory already
+  if [ ! -x "$TEMPDIR/dxvk_extracted/setup_dxvk.sh" ]; then
+    printf "\n${BLUE}Downloading DXVK!${NC}\n\n"
+    # If this file is already downloaded, delete it (might be corrupt)
+    rm -rf "$TEMPDIR/DXVK.tar.gz"
+    # Get the latest release of "DXVK"
+    DXVK_INFO=$(curl --silent "https://api.github.com/repos/doitsujin/dxvk/releases/latest")
+    DXVK_TAG=$(printf "${DXVK_INFO}\n" | grep -E "\"tag_name\":" | sed -E "s/.*\"([^\"]+)\".*/\1/")
+    DXVK_DLNAME=$(printf "${DXVK_INFO}\n" | grep -E "\"name\":.*\.tar\.gz" | sed -E "s/.*\"([^\"]+)\".*/\1/")
+    DXVK_LINK="https://github.com/doitsujin/dxvk/releases/download/${DXVK_TAG}/${DXVK_DLNAME}"
+    # Download and extract to $TEMPDIR
+    wget --show-progress -q -O "$TEMPDIR/DXVK.tar.gz" "$DXVK_LINK"
+    tar xvzf "$TEMPDIR/DXVK.tar.gz" -C "$TEMPDIR"
+    mv $TEMPDIR/dxvk-* $TEMPDIR/dxvk_extracted
+    chmod +x $TEMPDIR/dxvk_extracted/setup_dxvk.sh
+  fi
+
+  # Download Fusion 360 if it isn't in the temporary directory already
+  if [ ! -e "$TEMPDIR/setup/streamer.exe" ]; then
+    printf "\n${BLUE}Downloading Fusion 360!${NC}\n\n"
+    # If this file is already downloaded, delete it (might be corrupt)
+    rm -rf "$TEMPDIR/Fusion 360 Admin Install.exe"
+    # Download the installer and unzip to setup directory
+    wget --show-progress -q -P $TEMPDIR https://dl.appstreaming.autodesk.com/production/installers/Fusion%20360%20Admin%20Install.exe
+    7z x -o$TEMPDIR/setup/ "$TEMPDIR/Fusion 360 Admin Install.exe"
+  fi
+
+}
+
+install_packages() {
+  # Run winetricks (automatically makes a prefix in $INSTALLDIR)
+  printf "\n${GREEN}Running Winetricks!${NC}\n\n"
+  WINEPREFIX=$INSTALLDIR $TEMPDIR/winetricks atmlib gdiplus msxml3 msxml6 vcrun2017 corefonts \
+                                             fontsmooth=rgb winhttp win10 | tee $LOGDIR/winetricks_setup.log
+  if [ $? -ne 0 ]; then
+    printf "$FAIL_MESSAGE"
+    exit 1
+  fi
+
+  # Install "DXVK" in the wineprefix
+  printf "\n${GREEN}Installing DXVK!${NC}\n\n"
+  WINEPREFIX=$INSTALLDIR $TEMPDIR/dxvk_extracted/setup_dxvk.sh install | tee $LOGDIR/dxvk_setup.log
+  if [ $? -ne 0 ]; then
+    printf "$FAIL_MESSAGE"
+    exit 1
+  fi
+
+  # Install Fusion 360
+  printf "\n${GREEN}Installing Fusion 360!${NC}\n\n"
+  WINEPREFIX=$INSTALLDIR wine $TEMPDIR/setup/streamer.exe -p deploy -g -f $LOGDIR/fusion360_setup.log --quiet
+  if [ $? -ne 0 ]; then
+    printf "$FAIL_MESSAGE"
+    exit 1
+  fi
+
+  # Post install stuff (add other files to uninstall data)
+  printf "Autodesk Fusion 360.desktop\nFusion360_d3d11.log\nFusion360_d3d9.log\nFusion360_dxgi.log\n" >> $INSTALLDIR/$PACKAGE_NAME-wiener-uninstall.data
+}
