@@ -11,13 +11,13 @@ download_packages() {
     chmod +x $TEMPDIR/winetricks
   fi
 
-  # if download fails again:
-  # mspaint_dl_link=$(curl --silent https://www.filehorse.com/download-ms-paint/download/ | grep -oE "https://www\.filehorse\.com/download/file/[^\"]*")
-
   # Download mspaint.zip and the icon if it isn't in the temporary directory already
   if [ ! -e "$TEMPDIR/mspaint.zip" ]; then
     printf "\n${BLUE}Downloading MS Paint!${NC}\n\n"
-    wget --show-progress --no-check-certificate -q -O $TEMPDIR/mspaint.zip "https://www.filehorse.com/download/file/eDLdXi4tFQfLlsuM43-X1lIbqspVEbbaO5wkbcY3SUCUPJEce5BTxR5Zt9q--88Dl8TCWk-C-2pjri5kTah4fp9h1teoPWp7AIQcwJ3EGaQ/"
+    # Download mspaint
+    mspaint_dl_link=$(curl --silent https://www.filehorse.com/download-ms-paint/download/ | grep -oE "https://www\.filehorse\.com/download/file/[^\"]*")
+    wget --show-progress --no-check-certificate -q -O $TEMPDIR/mspaint.zip "$mspaint_dl_link"
+    # Download an icon
     wget -q -O $INSTALLDIR/icon.png "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/40d29641-ff13-4ea7-9dae-dffbabf6f29e/d7emkzf-304b18aa-9da5-42f7-8245-b3e0da089ae4.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwic3ViIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsImF1ZCI6WyJ1cm46c2VydmljZTpmaWxlLmRvd25sb2FkIl0sIm9iaiI6W1t7InBhdGgiOiIvZi80MGQyOTY0MS1mZjEzLTRlYTctOWRhZS1kZmZiYWJmNmYyOWUvZDdlbWt6Zi0zMDRiMThhYS05ZGE1LTQyZjctODI0NS1iM2UwZGEwODlhZTQucG5nIn1dXX0._TwmSOhsCGD3zGAcQuyptKx5VLsHDH0yGAPwws7t7No"
   fi
 
