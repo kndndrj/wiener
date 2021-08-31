@@ -44,6 +44,11 @@ during install, try using `install-clean` instead of `install`. For example:
 ```sh
 ./wiener.sh <package_name> install-clean -p <your/install/directory> ...
 ```
+#### Updating programs
+If you need to update any programs, just perform a clean install again:
+```sh
+./wiener.sh <package_name> install-clean
+```
 #### Uninstalling
 To uninstall, simply run:
 ```sh
